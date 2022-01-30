@@ -14,6 +14,7 @@ server.listen()
 # Lists For Clients and Their Nicknames
 clients = []
 nicknames = []
+c_address = []
 
 
 def is_specific(message):
@@ -78,11 +79,16 @@ def handle(client):
             elif temp[1] == 'DISCONNECT':
                 remove_from_server(client)
                 break
+            elif temp[1] == 'UDP':
+                client_addr = (str(temp[2][1:-2]), int(temp[3]))
+                print("in elif = " + str(client_addr))
+                thread = threading.Thread(target=send_udp, args=(client_addr,))
+                thread.start()
+                pass
             # Default option: the user want to send message
             else:
                 # Broadcasting Messages
                 message = message.encode('utf-8')
-                print("do i get to here?")
                 broadcast(message)
         # The user disconnected somehow 
         except:
@@ -103,6 +109,7 @@ def receive():
         nickname = client.recv(1024).decode('utf-8')
         nicknames.append(nickname)
         clients.append(client)
+        c_address.append(address)
 
         # Print And Broadcast Nickname
         print("Nickname is {}".format(nickname))
@@ -122,6 +129,14 @@ def remove_from_server(client):
     nickname = nicknames[index]
     broadcast('{} left!'.format(nickname).encode('utf-8'))
     nicknames.remove(nickname)
+
+
+def send_udp(address):
+    message = "This is udp message"
+    message = message.encode('utf-8')
+    udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    udp_socket.bind(('127.0.0.1',55001))
+    udp_socket.sendto(message,address)
 
 
 print('Welcome to The Chat room\n '

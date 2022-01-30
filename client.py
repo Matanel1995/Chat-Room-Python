@@ -1,6 +1,8 @@
 import socket
 import threading
 
+bufferSize = 1024
+
 # Choosing Nickname
 nickname = input("Choose your nickname: ")
 
@@ -27,11 +29,35 @@ def receive():
             break
 
 
+def receive_udp(udp_socket):
+    while True:
+        try:
+            # Receive Message From Server
+            message, addr = udp_socket.recvfrom(bufferSize)
+            message = message.decode('utf-8')
+            print(message)
+        except udp_socket.error as e:
+            # Close Connection When Error
+            print("An error occurred!" + e)
+            udp_socket.close()
+            break
+
+
 # Sending Messages To Server
 def write():
     while True:
         message = '{}: {}'.format(nickname, input(''))
-        client.send(message.encode('utf-8'))
+        temp = message.split(" ")
+        if temp[1] == 'UDP':
+            udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            udp_socket.bind(("127.0.0.1",55005))
+            message += ' ' + str(udp_socket)[-20:-2]
+            client.send(message.encode('utf-8'))
+            # Start new thread to receive UDP messages
+            receive_udp_thread = threading.Thread(target=receive_udp, args=(udp_socket,))
+            receive_udp_thread.start()
+        else:
+            client.send(message.encode('utf-8'))
 
 
 # Starting Threads For Listening And Writing
