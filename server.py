@@ -1,5 +1,6 @@
 import socket
 import threading
+import time
 
 #connection data
 host = '127.0.0.1'
@@ -42,6 +43,7 @@ def broadcast(message):
         # removing unnecessary chars from the string
         message = message.replace(temp_string , "")
         message = message.replace("  ", " ")
+        message = "(private) " + message
 
         # encode the message so i can send it
         message = message.encode('utf-8')
@@ -68,7 +70,7 @@ def handle(client):
             temp = message.split(" ")
             print(temp[1] + '\n')
             # If the user want to get all the users in chat room
-            if temp[1] == 'GET_USERS':
+            if temp[1] == 'get_users':
                 response_message = '----- Users in char room -------\n'
                 for i in range(0, len(nicknames)):
                     response_message += '(' + str(i+1) + ') ' + str(nicknames[i]) + '\n'
@@ -76,7 +78,7 @@ def handle(client):
                 response_message = response_message.encode('utf-8')
                 client.send(response_message)
             # If the user want to disconnect
-            elif temp[1] == 'DISCONNECT':
+            elif temp[1] == 'disconnect':
                 remove_from_server(client)
                 break
             elif temp[1] == 'UDP':
@@ -123,12 +125,16 @@ def receive():
 
 def remove_from_server(client):
     # Removing And Closing Clients
-    index = clients.index(client)
-    clients.remove(client)
-    client.close()
-    nickname = nicknames[index]
-    broadcast('{} left!'.format(nickname).encode('utf-8'))
-    nicknames.remove(nickname)
+    response_message = 'You have been disconnected'
+    response_message = response_message.encode('utf-8')
+    client.send(response_message)
+    # time.sleep(0.1)
+    # index = clients.index(client)
+    # clients.remove(client)
+    # client.close()
+    # nickname = nicknames[index]
+    # broadcast('{} left!'.format(nickname).encode('utf-8'))
+    # nicknames.remove(nickname)
 
 
 def send_udp(address):
