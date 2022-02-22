@@ -17,6 +17,7 @@ class UDPSocket:
 
     def close_socket(self):
         self.udp_soc.close()
+
     def send_file(self, _file):
         file = _file.encode()
         self.udp_soc.sendto(file, self.dest_ip)
