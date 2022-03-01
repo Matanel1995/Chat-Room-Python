@@ -11,27 +11,24 @@ port = 55000
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 server.bind((host, port))
-server_sock_udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-server_sock_udp.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-server_sock_udp.bind(('127.0.0.1', 55001))
 server.listen()
 
 
-lock = threading.Lock()
-
-
-# Lists For Clients and Their Nicknames
+# Lists For Clients and their Nicknames and the addresses
 clients = []
 nicknames = []
 c_address = []
 ports = [0 for i in range(0, 15)]
 ports[0] = 1
 ports[1] = 1
+
+
 # List of all the files in the server
 files = ['txt.txt', 'photo.jpeg', 'MP4.mp4']
 
 
 def is_specific(message):
+    """Function to deal with specific messages"""
     message = message.decode('utf-8')
     temp = message.split(" ")
     try:
@@ -44,8 +41,9 @@ def is_specific(message):
         return None
 
 
-# Sending Messages To All Connected Clients
 def broadcast(message):
+    """Function to broadcast the message it received from the client to all users
+        Unless the message is for specific client"""
     specific = is_specific(message)
     if specific is None:
         for client in clients:
@@ -66,25 +64,22 @@ def broadcast(message):
         client.send(message)
 
 
-""" 
-Handling Messages From Clients
-Check the request from the client and response accordingly
-possible requests:
-    1. Send message to all users or specific user in chat room.
-    2. Get all the users in chat room.
-    3. Get list of all files in room server
-    4. Get file from the server (Reliable UDP)
-"""
-
-
 def handle(client):
+    """
+    Handling Messages From Clients
+    Check the request from the client and response accordingly
+    possible requests:
+        1. Send message to all users or specific user in chat room.
+        2. Get all the users in chat room.
+        3. Get list of all files in room server
+        4. Get file from the server (Reliable UDP)
+    """
     while True:
         try:
             # decode message to know how to handle
             message = client.recv(1024)
             message = message.decode('utf-8')
             temp = message.split(" ")
-            print(temp[1] + '\n')
             # If the user want to get all the users in chat room
             if temp[1] == 'get_users':
                 response_message = '----- Users in char room -------\n'
@@ -97,52 +92,70 @@ def handle(client):
             elif temp[1] == 'disconnect':
                 remove_from_server(client)
                 break
+            # If the user want to get all the files names in the server
             elif temp[1] == 'get_list_file':
                 response_message = '----- File in server -------\n'
                 for i in files:
                     response_message += str(i) + '\n'
-                response_message += '---------- Thats all! ----------'
+                response_message += "---------- That's all! ----------"
                 response_message = response_message.encode('utf-8')
                 client.send(response_message)
+            # If user want to download a file from the server
             elif temp[1] == 'download_file':
-                print("IN ELIF")
+                # Check if file exist by name
                 if temp[2] in files:
                     print("file exist")
+                    # Find free port in range of 55000 - 55015 for server UDP socket
                     for i in range(0, 15):
                         if ports[i] == 0:
-                            port = 55000 + i
+                            client_port = 55000 + i
                             ports[i] = 1
-                            client.send(f'listen to port {port}'.encode('utf-8'))
-                            print(f'send port number to client {port}')
                             break
-                    print(server_sock_udp)
-                    file_transfer = UdprServer(port, temp[0].strip(":"), temp[2], server_sock_udp, lock)
-                    print("created udp instance")
+                    # Find free port in range of 55000 - 55015 for client UDP socket
+                    for i in range(0, 15):
+                        if ports[i] == 0:
+                            server_port = 55000 + i
+                            ports[i] = 1
+                            break
+                    port_tuple = (server_port, client_port)
+
+                    # Sent the port to the client so he will know how to set up
+                    client.send(f'{server_port}:{client_port}'.encode('utf-8'))
+
+                    # Creating reliable UDP Client object and start the threads
+                    file_transfer = UdprServer(port_tuple, temp[0].strip(":"), temp[2])
                     file_transfer.start()
                     file_transfer.join()
-                    ports[port - 55000] = 0
+
+                    # After we are done with file we clear the port so other client can use them
+                    ports[server_port - 55000] = 0
+                    ports[client_port - 55000] = 0
+                    continue
+
+                # File is not in the server so we sent message accordingly
                 else:
                     response_message = "No such file in the server"
                     client.send(response_message.encode('utf-8'))
-                # client_addr = (str(temp[2][1:-2]), int(temp[3]))
-                # print("in elif = " + str(client_addr))
-                # thread = threading.Thread(target=send_udp, args=(client_addr,))
-                # thread.start()
+                    continue
+
             # Default option: the user want to send message
             else:
                 # Broadcasting Messages
+                print(message)
                 message = message.encode('utf-8')
                 broadcast(message)
+
         # The user disconnected somehow 
         except socket.error:
             # Removing And Closing Clients
-            print("IM HERE BEFORE DISCONNECTING")
             remove_from_server(client)
             break
 
 
-# Receiving / Listening Function
 def receive():
+    """Function to ask the user of his username and check if its already taken
+       if its taken we send message to ask for it again
+       if the username is free we will start the handle thread"""
     while True:
         # Accept Connection
         client, address = server.accept()
@@ -151,11 +164,14 @@ def receive():
         # Request And Store Nickname
         client.send('NICK'.encode('utf-8'))
         nickname = client.recv(1024).decode('utf-8')
+        # Check if the username is taken we send new request and receive new username until the username is free
         while nickname in nicknames:
             client.send('NICK_TAKEN'.encode('utf-8'))
             nickname = client.recv(1024).decode('utf-8')
         client.send('GOT_IT'.encode('utf-8'))
         time.sleep(0.03)
+
+        # Add the new user to our lists
         nicknames.append(nickname)
         clients.append(client)
         c_address.append(address)
@@ -175,26 +191,11 @@ def remove_from_server(client):
     response_message = 'You have been disconnected'
     response_message = response_message.encode('utf-8')
     client.send(response_message)
+    # Find the user index and remove it from all lists
     client_index = clients.index(client)
     clients.pop(client_index)
     nicknames.pop(client_index)
     c_address.pop(client_index)
-    # time.sleep(0.1)
-    # index = clients.index(client)
-    # clients.remove(client)
-    # client.close()
-    # nickname = nicknames[index]
-    # broadcast('{} left!'.format(nickname).encode('utf-8'))
-    # nicknames.remove(nickname)
-
-
-def send_udp(address):
-    message = "This is udp message"
-    message = message.encode('utf-8')
-    udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    udp_socket.bind(('127.0.0.1', 55001))
-    udp_socket.sendto(message, address)
-
 
 print('Welcome to The Chat room\n '
       '##### If you want to send message to specific client use "#" before his nickname!!\n '
