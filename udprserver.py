@@ -200,4 +200,3 @@ class UdprServer(threading.Thread):
     def run(self) -> None:
         self.udp_transfer_files()
         self.server_sock_udp.close()
-

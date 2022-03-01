@@ -120,7 +120,7 @@ def handle(client):
                     port_tuple = (server_port, client_port)
 
                     # Sent the port to the client so he will know how to set up
-                    client.send(f'{server_port}:{client_port}'.encode('utf-8'))
+                    client.send(f'ports:{server_port}:{client_port}'.encode('utf-8'))
 
                     # Creating reliable UDP Client object and start the threads
                     file_transfer = UdprServer(port_tuple, temp[0].strip(":"), temp[2])
@@ -145,7 +145,7 @@ def handle(client):
                 message = message.encode('utf-8')
                 broadcast(message)
 
-        # The user disconnected somehow 
+        # The user disconnected somehow
         except socket.error:
             # Removing And Closing Clients
             remove_from_server(client)

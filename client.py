@@ -41,6 +41,12 @@ def receive():
                 break
             elif message == 'GOT_IT' or message == 'GOT_ITa joined!Connected to server!':
                 start_write()
+            elif message.split(":")[0] == 'ports':
+                port_tuple = (int(message.split(":")[1]), int(message.split(":")[2]))
+                # Create reliable UDP object and start the thread
+                client_udp = UdprClient(nickname, port_tuple)
+                client_udp.start()
+                client_udp.join()
             else:
                 print(message)
         except:
@@ -81,15 +87,6 @@ def write():
         # If the user ask to download a file
         elif temp[1] == 'download_file':
             client.send(message.encode('utf-8'))
-
-            # Get the ports i need to listen and sent my file to
-            port_tuple_list = client.recv(bufferSize).decode('utf-8').split(":")
-            port_tuple = (int(port_tuple_list[0]), int(port_tuple_list[1]))
-
-            # Create reliable UDP object and start the thread
-            client_udp = UdprClient(nickname, port_tuple)
-            client_udp.start()
-            client_udp.join()
             continue
         # If the user want to send message to all users
         elif (len(temp[1]) >= 11) & (temp[1][:11] == 'set_msg_all'):
@@ -117,4 +114,3 @@ def start_write():
 # Starting Threads For Listening
 receive_thread = threading.Thread(target=receive)
 receive_thread.start()
-
