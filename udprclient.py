@@ -147,7 +147,7 @@ class UdprClient(threading.Thread):
                     except:
                         pass
 
-                    # If the server still sending us the SIZE that mean he didnt receive
+                    # If the server still sending us the SIZE that mean he didn't receive
                     # our ACK (because of packet loss)
                     # so we send him ACK again until he gets it
                     if decoded_data == 'SIZE':

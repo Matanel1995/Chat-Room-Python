@@ -2,6 +2,7 @@ import threading
 import socket
 import math
 import os
+import time
 
 
 class UdprServer(threading.Thread):
@@ -20,7 +21,7 @@ class UdprServer(threading.Thread):
         self.buffer = []
         self.ack_data = {}
         self.nick_name = nick_name
-        print(f'Server port num {port_tuple[0]} client port num {self.port}')
+        self.time_for_rtt = {}
 
     def udp_transfer_files(self):
         """ Function to start the process of sending the file in a reliable way to the client"""
@@ -86,7 +87,10 @@ class UdprServer(threading.Thread):
                 if nack[k] == 0:
                     data = self.buffer[k]
                     ind = (k % self.seq_max).to_bytes(1, byteorder='big')  # Find the sequence number
-                    packet = ind+data # add the sequence number before the data and sending it to the client
+                    packet = ind+data  # add the sequence number before the data and sending it to the client
+                    # Save current time in orded to calculate the RTT
+                    if k == start_index and not self.time_for_rtt:
+                        self.time_for_rtt[k % 10] = time.time()
                     self.server_sock_udp.sendto(packet, ('127.0.0.1', self.port))
             precent = (start_index / len(nack)) * 100  # Calculate how much of the file already transfer
             self.server_sock_udp.settimeout(self.time_out)
@@ -106,6 +110,7 @@ class UdprServer(threading.Thread):
                     try:
                         self.server_sock_udp.sendto('CONFIRM_PROCEED'.encode('utf-8'),
                                                     ('127.0.0.1', self.port))
+                        self.server_sock_udp.settimeout(1)
                         msg, _ = self.server_sock_udp.recvfrom(1024)
                         real_msg = msg.decode('utf-8').split(":")
 
@@ -115,11 +120,6 @@ class UdprServer(threading.Thread):
 
                         # Got no proceed answer
                         elif real_msg[0] == 'NO_PROCEED' and real_msg[1] == self.nick_name:
-                            msg, _ = self.server_sock_udp.recvfrom(1024)
-                            print(msg.decode('utf-8'))
-                            while msg.decode('utf-8').split(":")[0] != 'FIN' and msg.decode('utf-8').split(":")[1] ==\
-                                    self.nick_name:
-                                msg, _ = self.server_sock_udp.recvfrom(1024)
                             end_index = len(nack) + 1
                             break
                         else:
@@ -162,6 +162,12 @@ class UdprServer(threading.Thread):
                 # If none of the above we check the ask message the client send us and mark it to ourselves
                 for i in range(start_index, end_index):
                     if i % 10 == int(ack.decode('utf-8')) % 10:
+                        # Check if i got ACK for the packet which i saved the time for the RTT calculation
+                        if i % 10 in self.time_for_rtt:
+                            # calculate rtt
+                            self.time_out = ((1 - 0.125) * self.time_out) + \
+                                            (0.125 * (time.time() - self.time_for_rtt[i % 10]))
+                            self.time_for_rtt = {}
                         nack[i] = 1
                         if float(precent) > 0:
                             print(f'Send {precent}% from the file! To: {self.nick_name}')
