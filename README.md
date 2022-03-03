@@ -83,6 +83,8 @@ When a = 0.125
 * In case packet from the client to the server was lost(ACK), the server will send again the the data but the client will see he allready got that packet so he will send back ACK automatically 
 
 ## UML
+![UML](https://user-images.githubusercontent.com/92520981/156637671-ef83094e-9de8-45fc-8ae7-cb2aa4b29705.jpeg)
+
 
 ## Pictures of the chat room
 Server on the left client on the right </br></br>
