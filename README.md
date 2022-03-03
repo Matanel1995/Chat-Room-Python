@@ -1,10 +1,28 @@
 # Chat-Room-Python
 
-Chat room Python implemented
+In this project we implemnted a chat room using python.
+Clients can connect to the room send a recive messages to all other clients or to a specific client.
+Also clients can download files from the server using our new reliable UDP protocol.
+
+# Reliable UDP
+We implemented a new reliable UDP protocol baset on the selective repeat algorithm.</br>
+We divide our file into parts and give each part a sequnce number between 0 to 9 (modulo 10).</br>
+For each part the server send to the client, the client will response with ACK (the seq number he got).</br>
+When the server recive an ACK from the client he marks that specific packet so he will know not to send it again.</br>
+If the packet wasnt marked the server will send it again until he will get an ACK.</br></br>
+
+
 
 ## Client Instructions
 
 **The client can run *only* after the server is already running!**
+The client have number of code words he can use:</br>
+* 'disconnect' - For disconnecting.
+* 'get_users' - Get a list with all users in the chat room.
+* 'set_msg_all' - Next messages will be send to all users.
+* 'set_msg' - Next message will be send only to a specific user
+* 'get_list_file' - Get a list with all the file in the server you can download
+* 'download_file' - Request to download a file froim the server.
 
 ### Connecting to the server
 
@@ -21,20 +39,6 @@ Chat room Python implemented
     'Disconnect'
     'udp is cool'
 
-***Code Words:***
-
-* 'disconnect'
-* 'UDP'
-* 'set_msg_all'
-* 'set_msg'
-
-### Sending a text message to a SPECIFIC participant
-
-#### Old private
-
-    Type '#' and the nickname of the participant you wish to send the message to.
-    for example- if the nickname is 'Amit' and the private message is 'hello Amit':
-            we write '#Amit hello Amit'
 
 ### Setting a PRIVATE chat with a specific participant
 
@@ -63,4 +67,18 @@ file extension.
 If successful, after downloading 40% you will be asked to confirm the rest of the download (or not).
 Finally, you will be asked to provide the new file name ***+*** file extension.
 
-### Download a file from the server
+## Chat room flow chart
+
+![0001](https://user-images.githubusercontent.com/92520981/156567692-102af44b-932c-4289-8626-7fbf7631fe46.jpg)
+
+## How we dealing with latency
+At each iteration of sending data we save the time of the first packet that we send </br>
+when we recive an ACK for that packet we calculate the RTT (current time - marked time)</br>
+with that information we calculate the new estimated RTT using this formula :</br>
+EstimatedRTT = (1- a)*EstimatedRTT + a*SampleRTT. </br>
+When a = 0.125
+
+## How we dealing with packet loss
+In case packet from the server to the client is lost the client will not send an ACK for that packet, so the server will send it again
+In case packet from the client to the server was lost(ACK), the server will send again the the data but the client will see he allready got that packet so he will send back ACK automatically 
+
