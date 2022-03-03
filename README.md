@@ -79,6 +79,17 @@ EstimatedRTT = (1- a)*EstimatedRTT + a*SampleRTT. </br>
 When a = 0.125
 
 ## How we dealing with packet loss
-In case packet from the server to the client is lost the client will not send an ACK for that packet, so the server will send it again
-In case packet from the client to the server was lost(ACK), the server will send again the the data but the client will see he allready got that packet so he will send back ACK automatically 
+* In case packet from the server to the client is lost the client will not send an ACK for that packet, so the server will send it again.</br>
+* In case packet from the client to the server was lost(ACK), the server will send again the the data but the client will see he allready got that packet so he will send back ACK automatically 
+
+## UML
+
+## Pictures of the chat room
+Server on the left client on the right </br>
+Star of the download until proceed:</br>
+![download_1](https://user-images.githubusercontent.com/92520981/156574442-f693c998-cac6-42e8-a929-7e2332f9071b.PNG)
+
+after proceed:</br>
+![download_2](https://user-images.githubusercontent.com/92520981/156574539-80c938ec-51d4-41be-8b57-6da98b327b03.PNG)
+
 
