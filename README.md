@@ -85,7 +85,7 @@ When a = 0.125
 ## UML
 
 ## Pictures of the chat room
-Server on the left client on the right </br>
+Server on the left client on the right </br></br>
 Star of the download until proceed:</br>
 ![download_1](https://user-images.githubusercontent.com/92520981/156574442-f693c998-cac6-42e8-a929-7e2332f9071b.PNG)
 
