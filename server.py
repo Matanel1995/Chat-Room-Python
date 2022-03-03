@@ -35,8 +35,7 @@ class Server:
         except:
             return None
 
-
-    def broadcast(self,message):
+    def broadcast(self, message):
         """Function to broadcast the message it received from the client to all users
             Unless the message is for specific client"""
         specific = self.is_specific(message)
@@ -57,7 +56,6 @@ class Server:
             # encode the message so i can send it
             message = message.encode('utf-8')
             client.send(message)
-
 
     def handle(self, client):
         """
@@ -184,8 +182,12 @@ class Server:
         response_message = 'You have been disconnected'
         response_message = response_message.encode('utf-8')
         client.send(response_message)
-        # Find the user index and remove it from all lists
+        # Find the user index
         client_index = self.clients.index(client)
+        # Send message to all user client was disconnected
+        message = f'{self.nicknames[client_index]} disconnected'
+        self.broadcast(message.encode('utf-8'))
+        # Remove client from all lists
         self.clients.pop(client_index)
         self.nicknames.pop(client_index)
         self.c_address.pop(client_index)

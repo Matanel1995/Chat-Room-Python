@@ -32,7 +32,6 @@ class UdprServer(threading.Thread):
         if connected:
             self.update_buffer(segment_size)
             self.sliding_window()
-            print("in udp transfer file")
 
     def three_way_handshake(self, syn):
         """ Function to establish connection with the new client in reliable way
@@ -87,8 +86,8 @@ class UdprServer(threading.Thread):
                 if nack[k] == 0:
                     data = self.buffer[k]
                     ind = (k % self.seq_max).to_bytes(1, byteorder='big')  # Find the sequence number
-                    packet = ind+data  # add the sequence number before the data and sending it to the client
-                    # Save current time in orded to calculate the RTT
+                    packet = ind + data  # add the sequence number before the data and sending it to the client
+                    # Save current time in order to calculate the RTT
                     if k == start_index and not self.time_for_rtt:
                         self.time_for_rtt[k % 10] = time.time()
                     self.server_sock_udp.sendto(packet, ('127.0.0.1', self.port))
