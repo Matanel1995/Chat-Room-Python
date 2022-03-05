@@ -12,6 +12,8 @@ class Client:
         self.nickname = ''
         self.client_udp = None  # To store UDP socket when needed
         self.port_tuple = None  # ports for UDP
+        self.ip_addr = ''
+        self.port_num = 0
 
 # Listening to Server and Sending Nickname
     def receive(self):
@@ -84,10 +86,23 @@ class Client:
 
     def start_recive(self):
         # Connect to server and starting Threads For Listening
-        self.client.connect(('127.0.0.1', 55000))
+        try:
+            self.client.connect((self.ip_addr, int(self.port_num)))
+        except:
+            print("Cannot connect!, Please make sure you entered the right IP address and Port number!")
+            self.connect()
+            self.start_recive()
         self.nickname = input("Choose your nickname: ")
         receive_thread = threading.Thread(target=self.receive)
         receive_thread.start()
+
+    def connect(self):
+        self.ip_addr = input("Enter the server IP address:  ")
+        self.port_num = input("Enter the server port number:  ")
+        try:
+            self.port_num = int(self.port_num)
+        except:
+            self.connect()
 
 
 if __name__ == "__main__":
@@ -101,5 +116,6 @@ if __name__ == "__main__":
     print("(6): To download_file type ---download_file {some file name} example download_file a.txt.")
     print("(7): That it just have fun!!!!.")
     my_client = Client()
+    my_client.connect()
     my_client.start_recive()
 
